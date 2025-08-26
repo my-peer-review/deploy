@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report
+  namespace: report
+  labels:
+    app: report
+spec:
+  strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1     
+        maxUnavailable: 0
+  replicas: 1
+  selector:
+    matchLabels:
+      app: report
+  template:
+    metadata:
+      labels:
+        app: report
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-cred
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: docker.io/ale175/service-report:test
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9090
+          env:
+            # === JWT: letti direttamente dal Secret ===
+            - name: JWT_ALGORITHM
+              value: RS256
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: report-secrets
+                  key: jwt_public.pem
+
+            # === POSTGRES: letti da Secrets ===
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: report-secrets
+                  key: POSTGRES_URL
+
+            # === RabbitMQ: da secrets ===
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-password
+            - name: RABBITMQ_USERNAME
+              valueFrom:  
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-username
+            - name: RABBITMQ_URL
+              value: "amqp://$(RABBITMQ_USERNAME):$(RABBITMQ_PASSWORD)@rabbitmq.rabbitmq.svc.cluster.local:5672/%2f"
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/report/health
+              port: 9090
+            periodSeconds: 30
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/report/health
+              port: 9090
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/report/health
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

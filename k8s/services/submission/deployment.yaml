@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: submission
+  namespace: submission
+  labels:
+    app: submission
+spec:
+  strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1     
+        maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: submission
+  template:
+    metadata:
+      labels:
+        app: submission
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-cred
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: docker.io/ale175/service-submission:test
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 6060
+          env:
+            # === JWT: letti direttamente dal Secret ===
+            - name: JWT_ALGORITHM
+              value: RS256
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: submission-secrets
+                  key: jwt_public.pem
+
+            # === Mongo: letti da ConfigMap ===
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: submission-config        
+                  key: MONGO_URI_SUBMISSIONS
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: submission-config        
+                  key: MONGO_DB_NAME_SUBMISSIONS
+
+            # === RabbitMQ: da secrets ===
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-password
+            - name: RABBITMQ_USERNAME
+              valueFrom:  
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-username
+            - name: RABBITMQ_URL
+              value: "amqp://$(RABBITMQ_USERNAME):$(RABBITMQ_PASSWORD)@rabbitmq.rabbitmq.svc.cluster.local:5672/%2f"
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/submissions/health
+              port: 6060
+            periodSeconds: 3
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/submissions/health
+              port: 6060
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/submissions/health
+              port: 6060
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

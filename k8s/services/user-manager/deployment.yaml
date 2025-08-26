@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-manager
+  namespace: user-manager
+  labels:
+    app: user-manager
+spec:
+  strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1     
+        maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: user-manager
+  template:
+    metadata:
+      labels:
+        app: user-manager
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-cred
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: docker.io/ale175/service-user-manager:test
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5050
+          env:
+            # === JWT: letti direttamente dal Secret ===
+            - name: JWT_ALGORITHM
+              value: RS256                 
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-keys        
+                  key: jwt_public.pem
+            - name: JWT_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-keys
+                  key: jwt_private.pem
+
+            # === Mongo: letti da ConfigMap ===
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: user-manager-config
+                  key: MONGO_URI_USER
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: user-manager-config
+                  key: MONGO_DB_NAME_USER
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/user/health
+              port: 5050
+            periodSeconds: 3
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/user/health
+              port: 5050
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/user/health
+              port: 5050
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

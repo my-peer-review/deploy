@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: review
+  namespace: review
+  labels:
+    app: review
+spec:
+  strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxSurge: 1     
+        maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: review
+  template:
+    metadata:
+      labels:
+        app: review
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-cred
+      automountServiceAccountToken: false
+      containers:
+        - name: app
+          image: docker.io/ale175/service-review:test
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 7070
+          env:
+            # === JWT: letti direttamente dal Secret ===
+            - name: JWT_ALGORITHM
+              value: RS256                       
+            - name: JWT_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: review-secrets                 
+                  key: jwt_public.pem
+
+            # === Mongo: letti da ConfigMap ===
+            - name: MONGO_URI
+              valueFrom:
+                configMapKeyRef:
+                  name: review-config        
+                  key: MONGO_URI_REVIEW
+            - name: MONGO_DB_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: review-config        
+                  key: MONGO_DB_NAME_REVIEW
+            # === RabbitMQ: da secrets ===
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-password
+            - name: RABBITMQ_USERNAME
+              valueFrom:  
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: rabbitmq-username
+            - name: RABBITMQ_URL
+              value: "amqp://$(RABBITMQ_USERNAME):$(RABBITMQ_PASSWORD)@rabbitmq.rabbitmq.svc.cluster.local:5672/%2f"
+
+          startupProbe:
+            httpGet:
+              path: /api/v1/review/health
+              port: 7070
+            periodSeconds: 3
+            failureThreshold: 15
+          readinessProbe:
+            httpGet:
+              path: /api/v1/review/health
+              port: 7070
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/v1/review/health
+              port: 7070
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"

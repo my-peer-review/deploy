@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: assignment-config
+  namespace: assignment
+data:
+  MONGO_DB_NAME_ASSIGNMENTS: "assignment"
+  MONGO_URI_ASSIGNMENTS: "mongodb://mongodb.assignment.svc.cluster.local:27017/assignment"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: submission-config
+  namespace: submission
+data:
+  MONGO_DB_NAME_SUBMISSIONS: "submission"
+  MONGO_URI_SUBMISSIONS: "mongodb://mongodb.submission.svc.cluster.local:27017/submission"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: user-manager-config
+  namespace: user-manager
+data:
+  MONGO_DB_NAME_USER: "users"
+  MONGO_URI_USER: "mongodb://mongodb.user-manager.svc.cluster.local:27017/users"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: review-config
+  namespace: review
+data:
+  MONGO_DB_NAME_REVIEW: "review"
+  MONGO_URI_REVIEW: "mongodb://mongodb.review.svc.cluster.local:27017/review"
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: report
+data:
+  PGDATA: /var/lib/postgresql/data/pgdata
