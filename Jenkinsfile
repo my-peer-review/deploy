@@ -22,7 +22,6 @@ pipeline {
         script {
           env.MODE = params.TRIGGER_TYPE
           env.SVC  = params.SERVICE_NAME
-          env.TAG  = params.IMAGE_TAG
           echo "MODE=${env.MODE} | SERVICE=${env.SVC}"
         }
       }
@@ -100,7 +99,7 @@ pipeline {
   }
 
   post {
-    success { echo "Deploy OK — MODE=${env.MODE}, SERVICE=${env.SVC}, TAG=${env.TAG}" }
+    success { echo "Deploy OK — MODE=${env.MODE}, SERVICE=${env.SVC}" }
     failure { echo "Deploy fallito — controlla i log" }
   }
 }
