@@ -76,7 +76,7 @@ pipeline {
       steps {
         script {
           if (env.MODE == 'push') {
-            sh """
+            sh '''
               set -e
               for ns in ${NS_LIST}; do
                 dep="deploy/$ns"
@@ -84,16 +84,16 @@ pipeline {
                 echo "Set image $dep -> $img"
                 ${MK8S} kubectl -n "$ns" set image "$dep" "$ns=$img" --record=true
               done
-            """
+            '''
           } else {
-            sh """
+            sh '''
               set -e
               ns="${SVC}"
               dep="deploy/${SVC}"
               img="${REGISTRY}/service-${SVC}:${TAG}"
               echo "Set image $dep -> $img"
               ${MK8S} kubectl -n "$ns" set image "$dep" "${SVC}=$img" --record=true
-            """
+            '''
           }
         }
       }
