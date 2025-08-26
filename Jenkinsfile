@@ -23,7 +23,7 @@ pipeline {
           env.MODE = params.TRIGGER_TYPE
           env.SVC  = params.SERVICE_NAME
           env.TAG  = params.IMAGE_TAG
-          echo "MODE=${env.MODE} | SERVICE=${env.SVC} | TAG=${env.TAG}"
+          echo "MODE=${env.MODE} | SERVICE=${env.SVC}"
         }
       }
     }
