@@ -128,7 +128,7 @@ pipeline {
   }
 
   post {
-    success { echo "✅ Deploy OK — MODE=${env.MODE}, SERVICE=${env.SVC}, TAG=${env.TAG}" }
-    failure { echo "❌ Deploy fallito — controlla i log" }
+    success { echo "Deploy OK — MODE=${env.MODE}, SERVICE=${env.SVC}, TAG=${env.TAG}" }
+    failure { echo "Deploy fallito — controlla i log" }
   }
 }
