@@ -103,7 +103,7 @@ pipeline {
       steps {
         script {
           if (env.MODE == 'push') {
-            sh """
+            sh '''
               set -e
               for ns in ${NS_LIST}; do
                 deps=$(${MK8S} kubectl -n "$ns" get deploy -o name || true)
@@ -113,14 +113,14 @@ pipeline {
                   ${MK8S} kubectl -n "$ns" rollout status "$d" --timeout=${ROLLOUT_TIMEOUT}
                 done
               done
-            """
+            '''
           } else {
-            sh """
+            sh '''
               set -e
               ns="${SVC}"
               d="deploy/${SVC}"
               ${MK8S} kubectl -n "$ns" rollout status "$d" --timeout=${ROLLOUT_TIMEOUT}
-            """
+            '''
           }
         }
       }
