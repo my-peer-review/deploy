@@ -5,7 +5,6 @@ pipeline {
   parameters {
     choice(name: 'TRIGGER_TYPE', choices: ['push', 'single'], description: 'push=deploy completo; single=solo un servizio')
     string(name: 'SERVICE_NAME', defaultValue: 'assignment', description: 'Usato se TRIGGER_TYPE=single')
-    string(name: 'IMAGE_TAG',    defaultValue: 'last',       description: 'Tag immagine da rilasciare (es: last, test, test-<sha>)')
     string(name: 'ROLLOUT_TIMEOUT', defaultValue: '180s',    description: 'Timeout per kubectl rollout status')
   }
 
@@ -69,33 +68,6 @@ pipeline {
             ${MK8S} kubectl apply -R -f "${K8S_DIR}/services/${SVC}"
           fi
         """
-      }
-    }
-
-    stage('Set image (tag)') {
-      steps {
-        script {
-          if (env.MODE == 'push') {
-            sh '''
-              set -e
-              for ns in ${NS_LIST}; do
-                dep="deploy/$ns"
-                img="${REGISTRY}/service-$ns:${TAG}"
-                echo "Set image $dep -> $img"
-                ${MK8S} kubectl -n "$ns" set image "$dep" "$ns=$img" --record=true
-              done
-            '''
-          } else {
-            sh '''
-              set -e
-              ns="${SVC}"
-              dep="deploy/${SVC}"
-              img="${REGISTRY}/service-${SVC}:${TAG}"
-              echo "Set image $dep -> $img"
-              ${MK8S} kubectl -n "$ns" set image "$dep" "${SVC}=$img" --record=true
-            '''
-          }
-        }
       }
     }
 
