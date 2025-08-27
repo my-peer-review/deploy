@@ -1,5 +1,5 @@
 pipeline {
-  agent { label 'azure-vm' }           // VM Azure registrata come nodo Jenkins
+  agent { label 'azure-vm' }
   options { timestamps() }
 
   parameters {
